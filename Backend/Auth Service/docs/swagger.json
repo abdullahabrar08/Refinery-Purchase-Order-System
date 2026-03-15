@@ -1,0 +1,108 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Auth Service – API Documentation",
+    "description": "Users Auth Service: login and health check. Roles: Admin, Buyer.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4001/users",
+      "description": "Auth service (Users)"
+    }
+  ],
+  "tags": [
+    { "name": "Health" },
+    { "name": "Auth" }
+  ],
+  "paths": {
+    "/healthz": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "description": "Returns service health status, name, version and environment.",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "healthy" },
+                    "serviceName": { "type": "string", "example": "auth-service" },
+                    "version": { "type": "string", "example": "1.0.0" },
+                    "environment": { "type": "string", "example": "development" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login",
+        "description": "Authenticate with email and password. Returns a JWT and user info (id, username, email, role).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "buyer@users.local"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "Password123!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "JWT for Authorization header"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 2 },
+                        "username": { "type": "string", "example": "buyer" },
+                        "email": { "type": "string", "example": "buyer@users.local" },
+                        "role": { "type": "string", "example": "Buyer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid email or password"
+          },
+          "422": {
+            "description": "Validation error (missing or invalid email/password)"
+          }
+        }
+      }
+    }
+  }
+}

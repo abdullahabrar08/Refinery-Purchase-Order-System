@@ -1,0 +1,38 @@
+# Backend Databases – Auth (PostgreSQL), Catalog (MongoDB)
+
+services:
+  auth-db:
+    image: postgres:16-alpine
+    container_name: users-auth-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pos_dev
+      POSTGRES_PASSWORD: pos_dev@123
+      POSTGRES_DB: users_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pos_dev -d users_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  catalog-db:
+    image: mongo:7
+    container_name: catalog-db
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - catalog-db-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  auth-db-data:
+  catalog-db-data:
