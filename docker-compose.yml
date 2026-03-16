@@ -1,4 +1,4 @@
-# Backend Databases – Auth (PostgreSQL), Catalog (MongoDB)
+# Backend Services and Databases
 
 services:
   auth-db:
@@ -19,6 +19,39 @@ services:
       timeout: 5s
       retries: 5
 
+  auth-service:
+    build:
+      context: .
+      dockerfile: Backend/Auth Service/Dockerfile
+    container_name: auth-service
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 4001
+      DB_HOST: auth-db
+      DB_PORT: 5432
+      DB_USER: pos_dev
+      DB_PASSWORD: pos_dev@123
+      DATABASE: users_dev
+      JWT_SECRET: users-auth-jwt-secret-change-in-production
+      JWT_EXPIRE: 24h
+    ports:
+      - "4001:4001"
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:4001/users/healthz',res=>process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   catalog-db:
     image: mongo:7
     container_name: catalog-db
@@ -33,6 +66,88 @@ services:
       timeout: 5s
       retries: 5
 
+  catalog-service:
+    build:
+      context: .
+      dockerfile: Backend/Catalog Service/Dockerfile
+    container_name: catalog-service
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 4002
+      MONGODB_URI: mongodb://catalog-db:27017/catalog_dev
+      JWT_SECRET: users-auth-jwt-secret-change-in-production
+    ports:
+      - "4002:4002"
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:4002/catalog/healthz',res=>process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  procurement-db:
+    image: postgres:16-alpine
+    container_name: procurement-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pos_dev
+      POSTGRES_PASSWORD: pos_dev@123
+      POSTGRES_DB: procurement_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - procurement-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pos_dev -d procurement_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  procurement-service:
+    build:
+      context: .
+      dockerfile: Backend/Procurement Service/Dockerfile
+    container_name: procurement-service
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 4003
+      DB_HOST: procurement-db
+      DB_PORT: 5432
+      DB_USER: pos_dev
+      DB_PASSWORD: pos_dev@123
+      DATABASE: procurement_dev
+      JWT_SECRET: users-auth-jwt-secret-change-in-production
+      CATALOG_SERVICE_URL: http://catalog-service:4002/catalog
+    ports:
+      - "4003:4003"
+    depends_on:
+      procurement-db:
+        condition: service_healthy
+      catalog-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:4003/procurement/healthz',res=>process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   auth-db-data:
   catalog-db-data:
+  procurement-db-data:

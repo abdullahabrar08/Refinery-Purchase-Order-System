@@ -1,0 +1,11 @@
+.git
+.gitignore
+**/node_modules
+**/dist
+**/.cursor
+**/.idea
+**/.vscode
+**/coverage
+**/npm-debug.log
+**/.DS_Store
+Frontend

@@ -7,6 +7,7 @@ const {
 } = require("../../utils/constants");
 const validationMiddleware = require("../middlewares/validation.middleware");
 const UserValidator = require("../validators/user.validator");
+const { authenticate } = require("../middlewares/auth.middleware");
 
 UserAPIRouter.post(
   "/login",
@@ -16,5 +17,8 @@ UserAPIRouter.post(
   ),
   UserController.login,
 );
+
+UserAPIRouter.get("/", authenticate, UserController.getUsers);
+UserAPIRouter.get("/:id", authenticate, UserController.getUserById);
 
 module.exports = UserAPIRouter;

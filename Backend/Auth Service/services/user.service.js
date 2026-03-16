@@ -1,5 +1,5 @@
 const { pool } = require("../data");
-const { getUserByEmail } = require("../data/queries/user.queries");
+const { getUserByEmail, getUserById, getAllUsers } = require("../data/queries/user.queries");
 const { toLoginResponseDTO } = require("../data/dto/user.dto");
 const { generateToken, comparePassword } = require("../utils/helpers");
 const { AppError } = require("../errors/errors");
@@ -36,4 +36,35 @@ const login = async (req) => {
   return toLoginResponseDTO(token, user);
 };
 
-module.exports = { UserService: { login } };
+const getUsers = async () => {
+  const query = getAllUsers();
+  const { rows } = await pool.query(query.text, query.values);
+  return rows.map(user => ({
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    role: user.role_name,
+    roleId: user.role_id,
+  }));
+};
+
+const getUser = async (req) => {
+  const id = req.params.id;
+  const query = getUserById(id);
+  const { rows } = await pool.query(query.text, query.values);
+  
+  if (rows.length === 0) {
+    throw new AppError(API_ERROR_RESPONSES.RESOURCE_NOT_FOUND, "User not found");
+  }
+  
+  const user = rows[0];
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    role: user.role_name,
+    roleId: user.role_id,
+  };
+};
+
+module.exports = { UserService: { login, getUsers, getUser } };

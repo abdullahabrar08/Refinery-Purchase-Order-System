@@ -29,8 +29,8 @@ if (error) {
 
 const config = {
   api: {
-    version: process.env.npm_package_version,
-    serviceName: process.env.npm_package_name,
+    version: process.env.npm_package_version || "1.0.0",
+    serviceName: process.env.npm_package_name || "auth-service",
     appName: process.env.APP_NAME || "USERS",
     port: envVars.PORT || 5002,
     environment: envVars.NODE_ENV,

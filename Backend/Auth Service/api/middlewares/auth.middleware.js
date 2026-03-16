@@ -2,18 +2,13 @@ const jwt = require("jsonwebtoken");
 const { pool } = require("../../data/index");
 const { ROLE_NAMES } = require("../../utils/constants");
 const { newEnforcer } = require("casbin");
-const Queries = require("../../data/repositories/user.repo");
+const Queries = require("../../data/queries/user.queries");
 const path = require("path");
 const modelPath = path.resolve(__dirname, "../../utils/rbac/model.conf");
 const policyPath = path.resolve(__dirname, "../../utils/rbac/policy.csv");
 const { AppError } = require("../../errors/errors");
 const { API_ERROR_RESPONSES } = require("../../errors/error.codes");
 const validationMiddleware = require("../middlewares/validation.middleware");
-const UserValidator = require("../validators/user.validator");
-const {
-  HTTP_REQUEST_ATTRIBUTES,
-  USER_ROLES,
-} = require("../../utils/constants");
 
 exports.authenticate = async (req, res, next) => {
   let token;
@@ -32,7 +27,7 @@ exports.authenticate = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    let { rows } = await pool.query(Queries.getUserDetails(decoded.id));
+    let { rows } = await pool.query(Queries.getUserById(decoded.userId));
     if (rows.length === 0) {
       throw new AppError(API_ERROR_RESPONSES.UNAUTHORIZED, "User not found");
     }

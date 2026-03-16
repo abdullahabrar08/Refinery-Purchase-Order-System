@@ -1,0 +1,126 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Catalog Service – API Documentation",
+    "description": "Catalog items: search, filter, sort. All endpoints require Bearer JWT (Admin or Buyer).",
+    "version": "1.0.0"
+  },
+  "servers": [{ "url": "http://localhost:4002/catalog", "description": "Catalog service" }],
+  "security": [{ "bearerAuth": [] }],
+  "tags": [{ "name": "Health" }, { "name": "Catalog" }],
+  "paths": {
+    "/healthz": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "serviceName": { "type": "string" },
+                    "version": { "type": "string" },
+                    "environment": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items": {
+      "get": {
+        "tags": ["Catalog"],
+        "summary": "List items (search, filter, sort)",
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" }, "description": "Search by name, id, supplier, manufacturer, model" },
+          { "name": "category", "in": "query", "schema": { "type": "string" }, "description": "Filter by category" },
+          { "name": "inStock", "in": "query", "schema": { "type": "string", "enum": ["true", "false"] } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["price_asc", "price_desc", "leadTime_asc", "leadTime_desc", "supplier_asc", "id"] }, "default": "id" },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 100 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of items and pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/CatalogItem" } },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer" },
+                        "limit": { "type": "integer" },
+                        "total": { "type": "integer" },
+                        "totalPages": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Missing or invalid token" },
+          "403": { "description": "Access denied (role not allowed)" }
+        }
+      }
+    },
+    "/items/{id}": {
+      "get": {
+        "tags": ["Catalog"],
+        "summary": "Get item by id",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Single catalog item",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CatalogItem" }
+              }
+            }
+          },
+          "401": { "description": "Missing or invalid token" },
+          "403": { "description": "Access denied" },
+          "404": { "description": "Item not found" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "CatalogItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "category": { "type": "string" },
+          "supplier": { "type": "string" },
+          "manufacturer": { "type": "string" },
+          "model": { "type": "string" },
+          "description": { "type": "string" },
+          "priceUsd": { "type": "number" },
+          "leadTimeDays": { "type": "number" },
+          "inStock": { "type": "boolean" },
+          "specs": { "type": "object" },
+          "compatibleWith": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

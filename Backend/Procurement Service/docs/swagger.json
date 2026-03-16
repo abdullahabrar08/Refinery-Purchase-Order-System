@@ -1,0 +1,143 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Procurement Service – API Documentation",
+    "description": "Order creation with supplier selection and header information, order item management, submit PO, status transitions. All endpoints require Bearer JWT (Admin or Buyer).",
+    "version": "1.0.0"
+  },
+  "servers": [{ "url": "http://localhost:4003/procurement", "description": "Procurement service" }],
+  "security": [{ "bearerAuth": [] }],
+  "tags": [{ "name": "Health" }, { "name": "Orders" }, { "name": "Order Items" }, { "name": "Status" }],
+  "paths": {
+    "/healthz": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "security": [],
+        "responses": { "200": { "description": "Service healthy" } }
+      }
+    },
+    "/orders": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Create order with header information",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["orderStatusId", "supplierId"],
+                "properties": {
+                  "orderStatusId": { "type": "integer", "enum": [1] },
+                  "supplierId": { "type": "integer", "example": 1 },
+                  "cost_center": { "type": "string" },
+                  "needed_by": { "type": "string", "format": "date" },
+                  "payment_terms": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Order created" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" } }
+      },
+      "get": {
+        "tags": ["Orders"],
+        "summary": "List orders",
+        "parameters": [{ "name": "status", "in": "query", "schema": { "type": "string", "enum": ["Draft", "Submitted", "Approved", "Rejected", "Fulfilled"] } }],
+        "responses": { "200": { "description": "List of orders" } }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get order (with items and timeline)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Order detail" }, "404": { "description": "Not found" } }
+      },
+      "delete": {
+        "tags": ["Orders"],
+        "summary": "Delete draft",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Draft deleted" }, "404": { "description": "Not found" }, "409": { "description": "Not a draft" } }
+      }
+    },
+    "/orders/{id}/items": {
+      "post": {
+        "tags": ["Order Items"],
+        "summary": "Add order item for the selected supplier (409 if supplier mismatch)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["catalogItemId", "quantity"],
+                "properties": {
+                  "catalogItemId": { "type": "string", "example": "VLV-0101" },
+                  "quantity": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Order item added" }, "409": { "description": "Supplier mismatch" }, "404": { "description": "Order or catalog item not found" } }
+      }
+    },
+    "/orders/{id}/items/{orderItemId}": {
+      "patch": {
+        "tags": ["Order Items"],
+        "summary": "Update order item quantity",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "orderItemId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "quantity": { "type": "integer", "minimum": 1 } }, "required": ["quantity"] } } } },
+        "responses": { "200": { "description": "Order item updated" }, "404": { "description": "Not found" } }
+      },
+      "delete": {
+        "tags": ["Order Items"],
+        "summary": "Remove order item",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "orderItemId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Order item removed" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/orders/{id}/submit": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Submit draft (generates PO number, snapshots prices/lead time)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "PO submitted" }, "404": { "description": "Not found" }, "409": { "description": "Not a draft" } }
+      }
+    },
+    "/orders/{id}/status": {
+      "post": {
+        "tags": ["Status"],
+        "summary": "Transition status (Approved | Rejected | Fulfilled)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": { "status": { "type": "string", "enum": ["Approved", "Rejected", "Fulfilled"] } }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Status updated" }, "404": { "description": "Not found" }, "409": { "description": "Invalid transition" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    }
+  }
+}

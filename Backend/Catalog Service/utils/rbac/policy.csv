@@ -1,0 +1,4 @@
+
+
+p, Admin, /catalog/items*, GET
+p, Buyer, /catalog/items*, GET

@@ -1,0 +1,9 @@
+# Procurement – role, path (keyMatch), method
+p, Admin, /procurement/orders*, GET
+p, Admin, /procurement/orders*, POST
+p, Admin, /procurement/orders*, PATCH
+p, Admin, /procurement/orders*, DELETE
+p, Buyer, /procurement/orders*, GET
+p, Buyer, /procurement/orders*, POST
+p, Buyer, /procurement/orders*, PATCH
+p, Buyer, /procurement/orders*, DELETE

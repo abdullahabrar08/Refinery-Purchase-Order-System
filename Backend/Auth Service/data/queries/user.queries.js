@@ -10,6 +10,23 @@ const getUserByEmail = (email) => ({
   values: [email],
 });
 
+const getUserById = (id) => ({
+  text: `SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name
+          FROM users u
+          JOIN roles r ON r.id = u.role_id
+          WHERE u.id = $1`,
+  values: [id],
+});
+
+const getAllUsers = () => ({
+  text: `SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name
+          FROM users u
+          JOIN roles r ON r.id = u.role_id`,
+  values: [],
+});
+
 module.exports = {
   getUserByEmail,
+  getUserById,
+  getAllUsers,
 };
